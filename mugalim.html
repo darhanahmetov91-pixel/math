@@ -1,0 +1,31 @@
+<!DOCTYPE html><html lang="kk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Мұғалім беті</title>
+<style>
+:root{--bg:#eaf6ff;--card:#fff;--tx:#1c2540;--pr:#1f6feb}
+@media(prefers-color-scheme:dark){:root{--bg:#141b30;--card:#1f2a48;--tx:#f1f4ff}}
+body{margin:0;background:var(--bg);color:var(--tx);font:17px/1.4 "Trebuchet MS",system-ui,sans-serif}
+#w{max-width:760px;margin:auto;padding:16px}input,select,button{font:inherit;padding:10px 14px;border-radius:12px;border:2px solid var(--pr);background:var(--card);color:var(--tx)}
+button{background:var(--pr);color:#fff;font-weight:700;cursor:pointer}.card{background:var(--card);border-radius:14px;padding:12px;margin:8px 0;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.tag{padding:3px 10px;border-radius:10px;color:#fff;font-weight:700;font-size:15px;align-self:flex-start}.row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+</style></head><body><div id="w"><h1>👩‍🏫 Мұғалім беті</h1>
+<div class="row"><input id="pin" type="password" placeholder="PIN-код"><button onclick="load()">Көрсету</button><select id="f" onchange="draw()"><option value="">Барлық сынып</option></select></div>
+<div id="sum"></div><div id="o">PIN-кодты енгізіп, «Көрсету» батырмасын басыңыз.</div></div>
+<script>
+const API=''; // Apps Script веб-қосымшасының сілтемесі
+const $=s=>document.querySelector(s),esc=x=>String(x).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+let rows=[],tm=null;
+async function load(){if(!API){$('#o').textContent='Алдымен файлдағы API сілтемесін қойыңыз (нұсқаулықты қараңыз).';return}
+ try{const r=await fetch(API+'?pin='+encodeURIComponent($('#pin').value)),j=await r.json();
+  if(j.err){$('#o').textContent='PIN-код қате.';return}
+  rows=j.rows||[];const f=$('#f'),v=f.value,cl=[...new Set(rows.map(r=>r.cls))].sort();
+  f.innerHTML='<option value="">Барлық сынып</option>'+cl.map(c=>`<option ${c==v?'selected':''}>${esc(c)}</option>`).join('');
+  draw();clearTimeout(tm);tm=setTimeout(load,30000)}catch(e){$('#o').textContent='Жүктеу мүмкін болмады. Интернетті және сілтемені тексеріңіз.'}}
+function lvl(r){const t=+r.tot||0,a=t?r.ok/t*100:0;
+ if(!t)return[0,'Кірді, әлі бастаған жоқ','#7a869a'];if(t<5)return[1,'Жаңа бастады','#7a869a'];
+ return a>=85?[4,'Жақсы','#1f9d63']:a>=60?[3,'Орташа','#d99a00']:[2,'Көмек керек','#e5484d']}
+function draw(){const c=$('#f').value,L=rows.filter(r=>!c||r.cls==c).map(r=>({r,l:lvl(r)})).sort((a,b)=>a.l[0]-b.l[0]||String(a.r.nick).localeCompare(String(b.r.nick)));
+ const act=L.filter(x=>+x.r.tot>0),avg=act.length?Math.round(act.reduce((s,x)=>s+x.r.ok/x.r.tot*100,0)/act.length):0;
+ $('#sum').innerHTML=`<div class="card"><span>Кірген оқушы: <b>${L.length}</b></span><span>Тапсырма орындаған: <b>${act.length}</b></span><span>Орташа дәлдік: <b>${avg}%</b></span></div>`;
+ $('#o').innerHTML=L.length?L.map(({r,l})=>{const h=String(r.hard||'').split(',').filter(Boolean).map(x=>x.split(':')[0].replace('x','×')).join(', ');
+  const d=r.t?new Date(r.t).toLocaleString('kk-KZ'):'';
+  return `<div class="card"><div><b>${esc(r.nick)}</b> · ${esc(r.cls)}<br><small>Жауап: ${+r.tot||0}, дұрыс: ${r.tot?Math.round(r.ok/r.tot*100):0}%, ⭐ ${+r.stars||0}<br>Қиын: ${esc(h||'—')}<br>Соңғы кіру: ${esc(d)}</small></div><span class="tag" style="background:${l[2]}">${l[1]}</span></div>`}).join(''):'Әзірге ешкім кірген жоқ.'}
+</script></body></html>

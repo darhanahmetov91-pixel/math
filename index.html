@@ -39,8 +39,9 @@ const D={pts:0,stars:0,best:0,tot:0,ok:0,f:{},snd:true,cls:'',nick:''};
 let S;try{S=Object.assign({},D,JSON.parse(localStorage.getItem('am1')||'{}'))}catch(e){S=Object.assign({},D)}
 let DB=null,UID=null,pt;
 const esc=x=>String(x).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-function push(){if(!DB||!UID||!S.cls.trim()||!S.nick.trim())return;clearTimeout(pt);
- pt=setTimeout(()=>DB.doc('results/'+UID).set({cls:S.cls.trim().toLowerCase(),nick:S.nick.trim().slice(0,30),tot:S.tot,ok:S.ok,pts:S.pts,stars:S.stars,best:S.best,f:S.f,t:Date.now()}).catch(()=>{}),1500)}
+const API=''; // Apps Script веб-қосымшасының сілтемесі (нұсқаулықты қараңыз)
+function push(){if(!API||!S.cls.trim()||!S.nick.trim())return;clearTimeout(pt);
+ pt=setTimeout(()=>{try{fetch(API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({cls:S.cls.trim().slice(0,10),nick:S.nick.trim().slice(0,30),tot:S.tot,ok:S.ok,pts:S.pts,stars:S.stars,best:S.best,h:rev().slice(0,5).map(([k,v])=>k+':'+v.w).join(',')})}).catch(()=>{})}catch(e){}},1500)}
 const save=()=>{try{localStorage.setItem('am1',JSON.stringify(S))}catch(e){}push()};
 
 let sel=[2,3],sess=null,AC,ans='';
