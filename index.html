@@ -1,0 +1,118 @@
+<!DOCTYPE html><html lang="kk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Ақылды көбейту</title>
+<style>
+:root{--bg:#eaf6ff;--card:#fff;--tx:#1c2540;--pr:#1f6feb;--ok:#1f9d63;--no:#e5484d;--mut:#d8e4f2;--y:#ffc93c;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#141b30;--card:#1f2a48;--tx:#f1f4ff;--mut:#34426a}}
+:root[data-theme=dark]{--bg:#141b30;--card:#1f2a48;--tx:#f1f4ff;--mut:#34426a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:18px/1.4 "Trebuchet MS",system-ui,sans-serif}
+#app{max-width:560px;margin:auto;padding:16px}
+h1{margin:0;font-size:28px}
+.b{display:block;width:100%;padding:16px;margin:10px 0;font-weight:700;font-size:20px;font-family:inherit;border:0;border-radius:18px;background:var(--pr);color:#fff;cursor:pointer}
+.b.s{background:var(--mut);color:var(--tx)}.b.y{background:var(--y);color:#3a2b00}
+.c{padding:12px 16px;border-radius:12px;border:2px solid var(--pr);background:var(--card);color:var(--tx);font-weight:700;font-size:20px;font-family:inherit;cursor:pointer}
+.c.on{background:var(--pr);color:#fff}
+.card{background:var(--card);border-radius:16px;padding:14px;margin:10px 0}
+.a{width:100%;box-sizing:border-box;font-weight:800;font-size:34px;font-family:inherit;text-align:center;padding:12px;border-radius:14px;border:3px solid var(--pr);background:var(--card);color:var(--tx)}
+.q{font-size:48px;text-align:center;font-weight:800;margin:12px 0}
+.dots{font-size:22px;letter-spacing:3px;line-height:1.2;overflow-x:auto;white-space:nowrap}
+.ok{color:var(--ok)}.no{color:var(--no)}
+html,body{touch-action:manipulation;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+.a{min-height:1.4em}
+input,textarea{-webkit-user-select:text;user-select:text}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+.k{padding:0;height:64px;font-weight:800;font-size:28px;font-family:inherit;border:0;border-radius:16px;background:var(--card);color:var(--tx);box-shadow:0 3px 0 var(--mut);cursor:pointer}
+.k.s{background:var(--mut)}.k.y{background:var(--y);color:#3a2b00}
+.k:active,.b:active,.c:active{transform:scale(.95)}
+@media(max-width:380px){.q{font-size:40px}.k{height:56px}}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+</style></head><body><div id="app"></div>
+<script>
+// ===== Баптаулар (өзгертуге болады) =====
+const TOTAL=10;      // бір сабақтағы есеп саны
+const PTS=10;        // дұрыс жауапқа ұпай
+const MASTER=3;      // меңгеру үшін қатарынан дұрыс жауап саны
+const GAP=3;         // қате амал неше тапсырмадан кейін қайталанады
+// ========================================
+const $=s=>document.querySelector(s);
+const R=h=>{$('#app').innerHTML=h;const i=$('#in');if(i)setTimeout(()=>i.focus(),50)};
+const D={pts:0,stars:0,best:0,tot:0,ok:0,f:{},snd:true,cls:'',nick:''};
+let S;try{S=Object.assign({},D,JSON.parse(localStorage.getItem('am1')||'{}'))}catch(e){S=Object.assign({},D)}
+let DB=null,UID=null,pt;
+const esc=x=>String(x).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function push(){if(!DB||!UID||!S.cls.trim()||!S.nick.trim())return;clearTimeout(pt);
+ pt=setTimeout(()=>DB.doc('results/'+UID).set({cls:S.cls.trim().toLowerCase(),nick:S.nick.trim().slice(0,30),tot:S.tot,ok:S.ok,pts:S.pts,stars:S.stars,best:S.best,f:S.f,t:Date.now()}).catch(()=>{}),1500)}
+const save=()=>{try{localStorage.setItem('am1',JSON.stringify(S))}catch(e){}push()};
+
+let sel=[2,3],sess=null,AC,ans='';
+function beep(seq){if(!S.snd)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(AC.state=="suspended")AC.resume();let t=AC.currentTime;seq.forEach(([f,d])=>{const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;o.type='triangle';g.gain.setValueAtTime(.1,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d);t+=d*.9})}catch(e){}}
+const OK=[[660,.1],[880,.15]],NO=[[300,.15],[220,.25]],REC=[[523,.12],[659,.12],[784,.12],[1046,.3]];
+const BOT='<svg width="64" height="64" viewBox="0 0 64 64"><line x1="32" y1="4" x2="32" y2="13" stroke="#1f6feb" stroke-width="3"/><circle cx="32" cy="5" r="4" fill="#ffc93c"/><rect x="10" y="13" width="44" height="36" rx="12" fill="#1f6feb"/><circle cx="23" cy="29" r="6" fill="#fff"/><circle cx="41" cy="29" r="6" fill="#fff"/><circle cx="24" cy="30" r="3" fill="#1c2540"/><circle cx="42" cy="30" r="3" fill="#1c2540"/><path d="M22 40q10 7 20 0" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="18" y="50" width="28" height="10" rx="4" fill="#ffc93c"/><text x="32" y="58" font-size="9" font-weight="bold" text-anchor="middle" fill="#3a2b00">×</text></svg>';
+const key=(a,b)=>a+'x'+b, parse=k=>k.split('x').map(Number);
+const rev=()=>Object.entries(S.f).filter(([k,v])=>v.w>0&&!v.m).sort((x,y)=>y[1].w-x[1].w);
+const mas=()=>Object.entries(S.f).filter(([k,v])=>v.m);
+const expl=(a,b)=>`<div class="card"><b>${a} × ${b}</b> = ${Array(b).fill(a).join(' + ')} = <b>${a*b}</b><div class="dots">${Array(b).fill('●'.repeat(a)).join('<br>')}</div><small>${b} қатар, әр қатарда ${a} нүкте</small></div>`;
+const tg=()=>{S.snd=!S.snd;save();home()};
+const tgl=n=>{sel=sel.includes(n)?sel.filter(x=>x!=n):[...sel,n].sort((a,b)=>a-b);home()};
+const tabs=()=>(sel.length?sel:[2]);
+
+function home(){sess=null;
+R(`<div class="row" style="align-items:center;flex-wrap:nowrap">${BOT}<div><h1>Ақылды көбейту</h1>Мен — Есепбот! Бірге үйренейік.</div></div>
+<div class="card">⭐ ${S.stars} &nbsp; 🏆 ${S.pts} ұпай &nbsp; 🔥 Үздік қатар: ${S.best}<br><button class="c" style="margin-top:8px" onclick="tg()">${S.snd?'🔊 Дыбыс қосулы':'🔇 Дыбыс өшірулі'}</button></div>
+<div class="card"><b>Оқушы:</b><input class="a" style="font-size:20px;margin:6px 0" placeholder="Сынып (мысалы, 3А)" maxlength="10" value="${esc(S.cls)}" onchange="S.cls=this.value;save()"><input class="a" style="font-size:20px" placeholder="Лақап есімің (аты-жөніңді жазба)" maxlength="30" value="${esc(S.nick)}" onchange="S.nick=this.value;save()"></div>
+<h3>Кестені таңда:</h3><div class="row">${[2,3,4,5,6,7,8,9,10].map(n=>`<button class="c ${sel.includes(n)?'on':''}" onclick="tgl(${n})">×${n}</button>`).join('')}</div>
+<button class="b" onclick="learn(${tabs()[0]},3)">📖 Үйрену</button>
+<button class="b y" onclick="start('practice')">🎯 Жаттықтыру</button>
+<button class="b" onclick="start('test')">📝 Білімімді тексеру</button>
+<button class="b s" onclick="prog()">🏅 Менің жетістігім</button>
+<button class="b s" onclick="parent()">👪 Ата-ана мен мұғалімге</button>`)}
+
+function learn(a,b){
+R(`<h2>📖 Үйрену</h2><div class="row">${tabs().map(n=>`<button class="c ${n==a?'on':''}" onclick="learn(${n},${b})">×${n}</button>`).join('')}</div>
+<h3>${a} × ... неше болады?</h3><div class="row">${[1,2,3,4,5,6,7,8,9,10].map(n=>`<button class="c ${n==b?'on':''}" onclick="learn(${a},${n})">${n}</button>`).join('')}</div>${expl(a,b)}<button class="b s" onclick="home()">⬅ Басты бет</button>`)}
+
+function start(mode,pool){
+ pool=pool||tabs().flatMap(a=>[1,2,3,4,5,6,7,8,9,10].map(b=>[a,b]));
+ sess={mode,pool,n:0,ok:0,streak:0,pend:[],force:null,wrong:new Set,cur:null};ask()}
+function pick(){const s=sess;
+ if(s.force){const q=s.force;s.force=null;return q}
+ const i=s.pend.findIndex(p=>p.due<=s.n);if(i>=0)return s.pend.splice(i,1)[0].q;
+ let q,t=0;do{q=s.pool[Math.random()*s.pool.length|0]}while(s.cur&&q[0]==s.cur[0]&&q[1]==s.cur[1]&&s.pool.length>1&&t++<20);return q}
+function hdr(){const s=sess;return `<div class="row" style="justify-content:space-between"><button class="c" onclick="home()">⬅</button><b>${s.mode=='test'?'Тексеру':'Жаттықтыру'}: ${s.n+1}/${TOTAL}</b><button class="c" onclick="tg();ask(true)">${S.snd?'🔊':'🔇'}</button></div>`}
+function ask(keep){const s=sess;if(!keep||!s.cur)s.cur=pick();const [a,b]=s.cur;
+ ans='';R(`${hdr()}<div class="q">${a} × ${b} = ?</div><div id="disp" class="a">&nbsp;</div><div class="pad">${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="k" onclick="kp('${n}')">${n}</button>`).join('')}<button class="k s" onclick="kp('<')">⌫</button><button class="k" onclick="kp('0')">0</button><button id="go" class="k y" onclick="check()">✓</button></div><div>⭐ ${S.stars} &nbsp; 🔥 Қатар: ${s.streak}</div>`)}
+function kp(d){if(d=='<')ans=ans.slice(0,-1);else if(ans.length<3)ans+=d;$('#disp').textContent=ans||'\u00a0'}
+function check(){const s=sess,v=parseInt(ans,10);if(isNaN(v))return
+ const [a,b]=s.cur,k=key(a,b),f=S.f[k]=S.f[k]||{w:0,r:0,s:0,m:0},ok=v===a*b;let msg='',rec=false;
+ S.tot++;
+ if(ok){S.ok++;s.ok++;s.streak++;S.pts+=PTS;S.stars++;f.r++;f.s++;if(f.s>=MASTER)f.m=1;
+  if(s.streak>=3&&s.streak>S.best){S.best=s.streak;rec=true}
+  msg=`<h2 class="ok">Дұрыс! Жарайсың! +${PTS} ұпай ⭐</h2>`+(rec?`<h3>🏅 Жаңа рекорд: қатарынан ${S.best} дұрыс жауап!</h3>`:'');beep(rec?REC:OK)}
+ else{s.streak=0;f.w++;f.s=0;f.m=0;s.wrong.add(k);
+  const c=[[b,a],[a,b-1],[a,b+1]].filter(([x,y])=>x>=1&&x<=10&&y>=1&&y<=10&&!(x==a&&y==b));
+  s.force=c[Math.random()*c.length|0];s.pend.push({q:[a,b],due:s.n+1+GAP});
+  msg=`<h2 class="no">Қате. Дұрыс жауап: ${a*b}</h2>`+(s.mode=='practice'?expl(a,b)+'<div>Ұқсас есепті шығарып көрейік!</div>':'');beep(NO)}
+ s.n++;save();
+ R(`${hdr().replace(`${s.n}/${TOTAL}`,`${s.n}/${TOTAL}`)}<div class="q">${a} × ${b} = ${v}</div>${msg}<button id="go" class="b" onclick="${s.n>=TOTAL?'done()':'ask()'}">${s.n>=TOTAL?'Нәтижені көру':'Әрі қарай'}</button>`)}
+function done(){const s=sess,acc=Math.round(s.ok/TOTAL*100);
+ R(`<h2>🎉 Сабақ аяқталды!</h2><div class="card">Дұрыс жауап: <b>${s.ok}/${TOTAL}</b><br>Дәлдік: <b>${acc}%</b><br>⭐ ${S.stars} &nbsp; 🏆 ${S.pts} ұпай</div>
+ <div class="card"><b>Қайталау керек амалдар:</b><br>${s.wrong.size?[...s.wrong].map(k=>parse(k).join(' × ')).join(', '):'Жоқ — өте жақсы! 👏'}</div>
+ <button class="b" onclick="start('${s.mode}',sess.pool)">Қайта ойнау</button><button class="b s" onclick="home()">⬅ Басты бет</button>`)}
+
+function prog(){const r=rev(),m=mas(),L=l=>l.length?l.map(([k,v])=>parse(k).join(' × ')).join(', '):'—';
+ R(`<h2>🏅 Менің жетістігім</h2><div class="card"><b>Қайталау керек (${r.length}):</b><br>${L(r)}</div><div class="card"><b>Меңгерілді (${m.length}):</b><br>${L(m)}</div>
+ <button class="b s" onclick="if(confirm('Барлық прогресс өшеді. Басынан бастаймыз ба?')){S=Object.assign({},D,{f:{},cls:S.cls,nick:S.nick});save();home()}">Басынан бастау</button><button class="b" onclick="home()">⬅ Басты бет</button>`)}
+
+function parent(){const r=rev(),acc=S.tot?Math.round(S.ok/S.tot*100):0;
+ R(`<h2>👪 Ата-ана мен мұғалімге</h2><div class="card">Барлық жауап: <b>${S.tot}</b><br>Дәлдік: <b>${acc}%</b><br>Қиын амалдар: <b>${r.length}</b><br>Меңгерілген амалдар: <b>${mas().length}</b></div>
+ <h3>Қиналып жүрген амалдар</h3>${r.length?r.map(([k,v])=>`<label class="card" style="display:block"><input type="checkbox" class="pk" value="${k}" checked> <b>${parse(k).join(' × ')}</b> — қате: ${v.w}, дұрыс: ${v.r}, әрекет: ${v.w+v.r}</label>`).join('')+'<button class="b y" onclick="custom()">Жеке сабақты бастау</button>':'<div class="card">Әзірге қиын амал жоқ.</div>'}
+ <button class="b" onclick="share()">📤 Нәтижені кодпен жіберу</button><button class="b y" onclick="cls()">🏫 Сынып кестесі</button><small>Деректер тек осы құрылғыда сақталады.</small><button class="b s" onclick="home()">⬅ Басты бет</button>`)}
+function share(){const o={n:S.nick||'?',c:S.cls||'',t:S.tot,o:S.ok,h:rev().slice(0,5).map(([k,v])=>k+':'+v.w)};
+ R(`<h2>📤 Нәтиже коды</h2><div class="card">Мына кодты мұғалімге жіберіңіз:</div><textarea id="cd" class="a" style="font-size:14px;height:110px" readonly>${btoa(unescape(encodeURIComponent(JSON.stringify(o))))}</textarea><button class="b" onclick="cp()">Көшіру</button><button class="b s" onclick="parent()">⬅ Артқа</button>`)}
+function cp(){const t=$('#cd');t.select();try{navigator.clipboard.writeText(t.value)}catch(e){document.execCommand('copy')}}
+function cls(){R(`<h2>🏫 Сынып кестесі</h2><div class="card">Оқушылардың кодтарын осында қойыңыз (әрқайсысы жаңа жолда).</div><textarea id="cd" class="a" style="font-size:14px;height:130px" placeholder="Кодтар..."></textarea><button class="b" onclick="tbl()">Көрсету</button><div id="cl"></div><button class="b s" onclick="parent()">⬅ Артқа</button>`)}
+function tbl(){const rows=[];$('#cd').value.split(/\s+/).filter(Boolean).forEach(c=>{try{rows.push(JSON.parse(decodeURIComponent(escape(atob(c)))))}catch(e){}});
+ $('#cl').innerHTML=rows.length?rows.sort((a,b)=>String(a.n).localeCompare(String(b.n))).map(r=>`<div class="card"><b>${esc(r.n)}</b> ${esc(r.c)} — жауап: ${+r.t||0}, дәлдік: ${r.t?Math.round(r.o/r.t*100):0}%<br>Қиын: ${esc((r.h||[]).map(x=>String(x).split(':')[0].split('x').join('×')).join(', ')||'—')}</div>`).join(''):'Дұрыс код табылмады.'}
+function custom(){const p=[...document.querySelectorAll('.pk:checked')].map(e=>parse(e.value));if(p.length)start('practice',p)}
+document.addEventListener('keydown',e=>{if(e.key==='Enter'){const g=$('#go');if(g)g.click()}else if($('#disp')){if(/^\d$/.test(e.key))kp(e.key);else if(e.key==='Backspace')kp('<')}});
+home();
+</script></body></html>
